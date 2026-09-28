@@ -232,7 +232,7 @@
         <div class="sys-badges">
             <div class="badge">M.A.R.S.O.S.: <span style="color:#4ade80">ONLINE</span></div>
             <div class="badge">SROS: <span style="color:#4ade80">SYNC</span></div>
-            <div class="badge">MHD: <span style="color:#4ade80">1.21 GW</span></div>
+            <div class="badge">MHD: <span style="color:#4ade80" id="badge-mhd">1.21 GW</span></div>
         </div>
     </header>
 
@@ -241,12 +241,12 @@
         <aside class="panel">
             <div class="panel-title">1. Ângulos de Câmera</div>
             <div class="btn-grid">
-                <button class="active" onclick="setCameraView('FRONTAL')">Frontal</button>
-                <button onclick="setCameraView('POSTERIOR')">Posterior</button>
-                <button onclick="setCameraView('LATERAL_DIR')">Lat. Direita</button>
-                <button onclick="setCameraView('LATERAL_ESQ')">Lat. Esquerda</button>
-                <button onclick="setCameraView('SUPERIOR')">Superior</button>
-                <button onclick="setCameraView('INFERIOR')">Inferior</button>
+                <button class="btn-cam active" onclick="setCameraView('FRONTAL', this)">Frontal</button>
+                <button class="btn-cam" onclick="setCameraView('POSTERIOR', this)">Posterior</button>
+                <button class="btn-cam" onclick="setCameraView('LATERAL_DIR', this)">Lat. Direita</button>
+                <button class="btn-cam" onclick="setCameraView('LATERAL_ESQ', this)">Lat. Esquerda</button>
+                <button class="btn-cam" onclick="setCameraView('SUPERIOR', this)">Superior</button>
+                <button class="btn-cam" onclick="setCameraView('INFERIOR', this)">Inferior</button>
             </div>
 
             <div class="panel-title">2. Visão Estrutural (SROS)</div>
@@ -302,12 +302,12 @@
             <div class="calc-box">
                 <label style="color:var(--gold-anodized); font-weight:bold;">CHASSI & TORSO</label>
                 <div class="func-toggle"><span>Reator Arc & Escudo MHD</span><label class="switch"><input type="checkbox" id="sw-mhd" checked onchange="toggleFuncao('mhd')"><span class="slider"></span></label></div>
-                <div class="func-toggle"><span>Reciclador CO₂ Carbono</span><label class="switch"><input type="checkbox" id="sw-co2" checked><span class="slider"></span></label></div>
+                <div class="func-toggle"><span>Reciclador CO₂ Carbono</span><label class="switch"><input type="checkbox" id="sw-co2" checked onchange="toggleFuncao('co2')"><span class="slider"></span></label></div>
             </div>
 
             <div class="calc-box">
                 <label style="color:var(--gold-anodized); font-weight:bold;">BRAÇOS & PERNAS</label>
-                <div class="func-toggle"><span>Placas S.A.M.S. Cinéticas</span><label class="switch"><input type="checkbox" id="sw-sams" checked><span class="slider"></span></label></div>
+                <div class="func-toggle"><span>Placas S.A.M.S. Cinéticas</span><label class="switch"><input type="checkbox" id="sw-sams" checked onchange="toggleFuncao('sams')"><span class="slider"></span></label></div>
                 <div class="func-toggle"><span>Propulsão a Plasma</span><label class="switch"><input type="checkbox" id="sw-prop" checked onchange="toggleFuncao('prop')"><span class="slider"></span></label></div>
             </div>
         </aside>
@@ -319,7 +319,7 @@
         scene.background = new THREE.Color(0x030712);
 
         const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
-        camera.position.set(0, 0, 8.5);
+        camera.position.set(0, 0.5, 9);
 
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(container.clientWidth, container.clientHeight);
@@ -333,90 +333,161 @@
         controls.dampingFactor = 0.05;
 
         // Luzes
-        scene.add(new THREE.AmbientLight(0xffffff, 0.8));
-        const dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
-        dirLight.position.set(5, 10, 7);
-        scene.add(dirLight);
+        scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+        const dirLight1 = new THREE.DirectionalLight(0xffffff, 1.2);
+        dirLight1.position.set(5, 10, 7);
+        scene.add(dirLight1);
 
-        const pointLightCore = new THREE.PointLight(0x00ffff, 2.0, 3);
-        pointLightCore.position.set(0, 0.7, 0.4);
+        const dirLight2 = new THREE.DirectionalLight(0x00f0ff, 0.8);
+        dirLight2.position.set(-5, -5, -5);
+        scene.add(dirLight2);
+
+        const pointLightCore = new THREE.PointLight(0x00ffff, 3.0, 4);
+        pointLightCore.position.set(0, 0.9, 0.5);
         scene.add(pointLightCore);
 
         // Materiais Realistas
-        const matRed = new THREE.MeshStandardMaterial({ color: 0x8b0000, metalness: 0.85, roughness: 0.25, name: 'externo' });
-        const matGold = new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.9, roughness: 0.2, name: 'externo' });
-        const matSilver = new THREE.MeshStandardMaterial({ color: 0xa8b2c1, metalness: 0.95, roughness: 0.15, name: 'externo' });
+        const matRed = new THREE.MeshStandardMaterial({ color: 0x8b0000, metalness: 0.85, roughness: 0.25 });
+        const matGold = new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.9, roughness: 0.2 });
+        const matSilver = new THREE.MeshStandardMaterial({ color: 0xa8b2c1, metalness: 0.95, roughness: 0.15 });
         const matCyan = new THREE.MeshBasicMaterial({ color: 0x00ffff });
-        const matGlowInt = new THREE.MeshBasicMaterial({ color: 0x00f0ff, wireframe: true, name: 'interno' });
+        const matGlowInt = new THREE.MeshBasicMaterial({ color: 0x00f0ff, wireframe: true });
+        const matCO2 = new THREE.MeshBasicMaterial({ color: 0x4ade80, wireframe: true });
+        const matPropulsion = new THREE.MeshBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.8 });
 
         // Grupos
         const armorGroup = new THREE.Group();
         const externalGroup = new THREE.Group();
         const internalGroup = new THREE.Group();
         const fxGroup = new THREE.Group();
+        const propulsionFXGroup = new THREE.Group();
+        const samsGroup = new THREE.Group();
+        const co2Group = new THREE.Group();
 
         armorGroup.add(externalGroup);
         armorGroup.add(internalGroup);
         armorGroup.add(fxGroup);
+        armorGroup.add(propulsionFXGroup);
         scene.add(armorGroup);
 
-        // Malha Exterior
+        // --- CONSTRUÇÃO DETALHADA DA ARMADURA ---
+
+        // Capacete & Rosto
         const helmet = new THREE.Mesh(new THREE.SphereGeometry(0.38, 32, 16), matRed);
-        helmet.position.set(0, 1.8, 0); helmet.scale.set(0.9, 1.1, 1.0);
+        helmet.position.set(0, 1.85, 0); helmet.scale.set(0.9, 1.1, 1.0);
         externalGroup.add(helmet);
 
-        const face = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.4, 4), matGold);
-        face.position.set(0, 1.78, 0.2); face.rotation.x = -Math.PI / 4;
+        const face = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.45, 4), matGold);
+        face.position.set(0, 1.82, 0.22); face.rotation.x = -Math.PI / 4;
         externalGroup.add(face);
 
-        const eyes = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.04, 0.1), matCyan);
-        eyes.position.set(0, 1.85, 0.33);
+        const eyes = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.04, 0.1), matCyan);
+        eyes.position.set(0, 1.9, 0.35);
         externalGroup.add(eyes);
 
-        const chest = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.5, 1.1, 8), matRed);
-        chest.position.set(0, 0.8, 0);
+        // Torso / Peitoral
+        const chest = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.45, 1.2, 8), matRed);
+        chest.position.set(0, 0.85, 0);
         externalGroup.add(chest);
 
+        // Reator Arc
         const coreMesh = new THREE.Mesh(new THREE.OctahedronGeometry(0.18, 2), matCyan);
-        coreMesh.position.set(0, 0.9, 0.35);
+        coreMesh.position.set(0, 0.95, 0.42);
         externalGroup.add(coreMesh);
 
+        // Ombros, Braços e Mãos
         [-0.85, 0.85].forEach(x => {
-            const sh = new THREE.Mesh(new THREE.SphereGeometry(0.3, 16, 16), matGold);
-            sh.position.set(x, 1.2, 0); externalGroup.add(sh);
-            const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.12, 0.8), matRed);
-            arm.position.set(x, 0.6, 0); externalGroup.add(arm);
+            const isLeft = x < 0;
+            const shoulder = new THREE.Mesh(new THREE.SphereGeometry(0.32, 16, 16), matGold);
+            shoulder.position.set(x, 1.25, 0); externalGroup.add(shoulder);
+
+            const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.12, 0.7), matRed);
+            arm.position.set(x, 0.7, 0); externalGroup.add(arm);
+
+            const hand = new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 12), matSilver);
+            hand.position.set(x, 0.25, 0); externalGroup.add(hand);
+
+            // Efeito Propulsor das Mãos
+            const pHand = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.4, 16), matPropulsion);
+            pHand.position.set(x, 0.05, 0);
+            pHand.rotation.x = Math.PI;
+            propulsionFXGroup.add(pHand);
         });
 
-        [-0.32, 0.32].forEach(x => {
-            const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.15, 0.9), matRed);
-            leg.position.set(x, -0.5, 0); externalGroup.add(leg);
+        // Cintura e Pernas
+        const waist = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.4, 0.3, 8), matGold);
+        waist.position.set(0, 0.1, 0);
+        externalGroup.add(waist);
+
+        [-0.35, 0.35].forEach(x => {
+            const thigh = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.15, 0.8), matRed);
+            thigh.position.set(x, -0.45, 0); externalGroup.add(thigh);
+
             const calf = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.12, 0.9), matSilver);
-            calf.position.set(x, -1.45, 0); externalGroup.add(calf);
+            calf.position.set(x, -1.3, 0); externalGroup.add(calf);
+
+            const foot = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.12, 0.4), matRed);
+            foot.position.set(x, -1.8, 0.1); externalGroup.add(foot);
+
+            // Efeito Propulsor dos Pés
+            const pFoot = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.7, 16), matPropulsion);
+            pFoot.position.set(x, -2.2, 0);
+            pFoot.rotation.x = Math.PI;
+            propulsionFXGroup.add(pFoot);
         });
 
-        // Estrutura Interna
-        const spine = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 2.5), matGlowInt);
-        spine.position.set(0, 0.2, -0.1);
+        // --- PLACAS S.A.M.S. (Cinéticas Externa) ---
+        [-0.5, 0.5].forEach(x => {
+            const samsPlate = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.4, 0.08), matSilver);
+            samsPlate.position.set(x, 0.85, 0.38);
+            samsGroup.add(samsPlate);
+        });
+        externalGroup.add(samsGroup);
+
+        // --- ESTRUTURA INTERNA (RAIO-X / SROS) ---
+        const spine = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 2.6), matGlowInt);
+        spine.position.set(0, 0.2, -0.05);
         internalGroup.add(spine);
+
+        const innerHead = new THREE.Mesh(new THREE.SphereGeometry(0.28, 16, 16), matGlowInt);
+        innerHead.position.set(0, 1.85, 0);
+        internalGroup.add(innerHead);
+
+        const innerChest = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.8, 0.4), matGlowInt);
+        innerChest.position.set(0, 0.85, 0);
+        internalGroup.add(innerChest);
+
+        // Reciclador CO2 Carbono Interno
+        const co2Pipes = new THREE.Mesh(new THREE.TorusGeometry(0.28, 0.03, 8, 24), matCO2);
+        co2Pipes.position.set(0, 0.8, 0.1);
+        co2Pipes.rotation.x = Math.PI / 2;
+        co2Group.add(co2Pipes);
+        internalGroup.add(co2Group);
+
+        internalGroup.visible = false; // Inicia na visão Externa
 
         // Escudo MHD
         const shieldMesh = new THREE.Mesh(
-            new THREE.SphereGeometry(2.4, 32, 16),
+            new THREE.SphereGeometry(2.5, 32, 16),
             new THREE.MeshBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.15, wireframe: true })
         );
         fxGroup.add(shieldMesh);
 
         // 1. Algoritmo de Câmera e Visão
-        function setCameraView(vista) {
+        function setCameraView(vista, btnElement) {
             document.getElementById('hud-angulo').innerText = vista;
+            if(btnElement) {
+                document.querySelectorAll('.btn-cam').forEach(b => b.classList.remove('active'));
+                btnElement.classList.add('active');
+            }
+
             const targetPos = new THREE.Vector3();
             switch (vista) {
-                case 'FRONTAL': targetPos.set(0, 0, 8.5); break;
-                case 'POSTERIOR': targetPos.set(0, 0, -8.5); break;
-                case 'LATERAL_DIR': targetPos.set(8.5, 0, 0); break;
-                case 'LATERAL_ESQ': targetPos.set(-8.5, 0, 0); break;
-                case 'SUPERIOR': targetPos.set(0, 8.5, 0.1); break;
+                case 'FRONTAL': targetPos.set(0, 0.5, 9); break;
+                case 'POSTERIOR': targetPos.set(0, 0.5, -9); break;
+                case 'LATERAL_DIR': targetPos.set(9, 0.5, 0); break;
+                case 'LATERAL_ESQ': targetPos.set(-9, 0.5, 0); break;
+                case 'SUPERIOR': targetPos.set(0, 9.5, 0.1); break;
                 case 'INFERIOR': targetPos.set(0, -8.5, 0.1); break;
             }
             camera.position.copy(targetPos);
@@ -430,23 +501,27 @@
 
             if (modo === 'EXTERNA') {
                 document.getElementById('btn-vis-ext').classList.add('active');
-                externalGroup.visible = true; internalGroup.visible = false;
+                externalGroup.visible = true;
+                internalGroup.visible = false;
                 setArmourOpacity(1.0, false);
             } else if (modo === 'INTERNA') {
                 document.getElementById('btn-vis-int').classList.add('active');
-                externalGroup.visible = false; internalGroup.visible = true;
+                externalGroup.visible = false;
+                internalGroup.visible = true;
             } else if (modo === 'HIBRIDA') {
                 document.getElementById('btn-vis-hib').classList.add('active');
-                externalGroup.visible = true; internalGroup.visible = true;
+                externalGroup.visible = true;
+                internalGroup.visible = true;
                 setArmourOpacity(0.35, true);
             }
         }
 
         function setArmourOpacity(opacity, transparent) {
             externalGroup.traverse((child) => {
-                if (child.isMesh && child.material.name === 'externo') {
+                if (child.isMesh) {
                     child.material.transparent = transparent;
                     child.material.opacity = opacity;
+                    child.material.needsUpdate = true; // CORREÇÃO CRÍTICA DO THREE.JS
                 }
             });
         }
@@ -456,6 +531,8 @@
             const gw = parseFloat(document.getElementById('input-mhd').value);
             const co2 = parseFloat(document.getElementById('input-co2').value);
             const impacto = parseFloat(document.getElementById('input-impacto').value);
+
+            document.getElementById('badge-mhd').innerText = `${gw.toFixed(2)} GW`;
 
             // Algoritmo MHD
             document.getElementById('out-escudo').innerText = `${(gw * 100).toFixed(1)} Tesla`;
@@ -469,20 +546,62 @@
 
             document.getElementById('out-sams').innerText = `${absorcao.toFixed(1)}%`;
             document.getElementById('out-ossos').innerText = `${estresse} MPa`;
+
+            // Reação visual ao impacto nas placas SAMS
+            samsGroup.children.forEach(plate => {
+                const shift = (impacto / 500) * 0.08;
+                plate.position.z = 0.38 - shift;
+            });
         }
 
+        // 4. Alternância Dinâmica das Funções
         function toggleFuncao(func) {
-            if (func === 'hud') eyes.material.color.setHex(document.getElementById('sw-hud').checked ? 0x00ffff : 0x222222);
-            if (func === 'lcd') face.material.color.setHex(document.getElementById('sw-lcd').checked ? 0x111111 : 0xd4af37);
-            if (func === 'mhd') shieldMesh.visible = document.getElementById('sw-mhd').checked;
-            if (func === 'prop') pointLightCore.intensity = document.getElementById('sw-prop').checked ? 2.0 : 0.2;
+            if (func === 'hud') {
+                eyes.material.color.setHex(document.getElementById('sw-hud').checked ? 0x00ffff : 0x222222);
+            }
+            if (func === 'lcd') {
+                face.material.color.setHex(document.getElementById('sw-lcd').checked ? 0x111111 : 0xd4af37);
+            }
+            if (func === 'mhd') {
+                const checked = document.getElementById('sw-mhd').checked;
+                shieldMesh.visible = checked;
+                coreMesh.visible = checked;
+            }
+            if (func === 'co2') {
+                co2Group.visible = document.getElementById('sw-co2').checked;
+            }
+            if (func === 'sams') {
+                samsGroup.visible = document.getElementById('sw-sams').checked;
+            }
+            if (func === 'prop') {
+                const checked = document.getElementById('sw-prop').checked;
+                pointLightCore.intensity = checked ? 3.0 : 0.2;
+                propulsionFXGroup.visible = checked;
+            }
         }
 
         // Loop principal 60 FPS
         function animate() {
             requestAnimationFrame(animate);
+
+            // Animação contínua dos subsistemas
             coreMesh.rotation.z += 0.02;
-            if (shieldMesh.visible) shieldMesh.rotation.y += 0.005;
+            coreMesh.rotation.y += 0.01;
+
+            if (shieldMesh.visible) {
+                shieldMesh.rotation.y += 0.005;
+            }
+
+            if (co2Group.visible) {
+                co2Pipes.rotation.z += 0.03;
+            }
+
+            // Animação de pulsação suave no empuxo de plasma
+            if (propulsionFXGroup.visible) {
+                const scale = 1 + Math.sin(Date.now() * 0.01) * 0.1;
+                propulsionFXGroup.children.forEach(p => p.scale.set(scale, scale, scale));
+            }
+
             controls.update();
             renderer.render(scene, camera);
         }
@@ -493,6 +612,7 @@
             renderer.setSize(container.clientWidth, container.clientHeight);
         });
 
+        // Inicialização
         executarCalculos();
         animate();
     </script>
